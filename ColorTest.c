@@ -1,13 +1,13 @@
 task main()
 {
 	int color = 0;
-	SensorType[S3] = sensorColorNxtFULL;
+	SensorType[S1] = sensorColorNxtFULL;
 
-	while (nNxtButtonPressed != 3)
+	while (true)
 	{
-		eraseDisplay();
-		color = SensorValue[S3];
+		color = SensorValue[S1];
 		displayString (0, "Color Value: %i", color);
-		wait10Msec(100);
+		wait1Msec(500);
+		eraseDisplay();
 	}
 }
