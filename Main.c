@@ -25,8 +25,8 @@ task main()
 		wait1Msec(250);
 
 		//Detect color
-		color = 5; //get_color();
-		displayString(0, "%d", color);
+		color = get_color();
+		displayString(0, "Color: %d", color);
 		wait1Msec(1000);
 		eraseDisplay();
 
