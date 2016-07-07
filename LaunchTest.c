@@ -1,4 +1,4 @@
-#define MOTOR_NUM 0
+#define MOTOR_NUM 2
 
 task main()
 {
@@ -35,7 +35,7 @@ task main()
 		while (nNxtButtonPressed != 3){}
 		for (int i = 0; i < power; i++)
 		{
-			motor[MOTOR_NUM] = -i;
+			motor[MOTOR_NUM] = i;
 			wait1Msec(10);
 		}
 		while (nNxtButtonPressed == -1){}
