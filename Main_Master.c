@@ -224,11 +224,17 @@ void BTMasterToggleMode ()
 		else //quit
 		{
 			mode = 0;
-			sendMessage (mode);
 		}
 		eraseDisplay();
 		displayString (0, "%d", mode);
 	} while (mode != 0);
+
+	for (int i = 0; i < 100; i++)
+	{
+		ClearMessage ();
+		sendMessage (mode);
+		wait1Msec (50);
+	}
 
 	wait1Msec (1000);
 }

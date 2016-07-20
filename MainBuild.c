@@ -42,6 +42,7 @@ void DecodePreferences (int code_choices);
 void BTSlaveStartOperation ();
 void BTSlaveToggleMode ();
 int TurnToColor (int chamber_requested, int chamber_current, int side);
+void TurnToColorSimple (int chamber_requested, int side);
 int ScanColor();
 bool FilterColor (int color);
 int StoreColor (int color);
@@ -64,6 +65,7 @@ task main()
 	int color = 0;
 
 	//calibrate
+	RotateServo (SERVO_LOWER, SERVO_LOWER_POS2, SERVO_LOWER_POS2, 100);
 	BTSlaveCalibrate (MOTOR_SORTER);
 	BTSlaveCalibrate (MOTOR_STORAGE);
 	eraseDisplay();
@@ -76,7 +78,6 @@ task main()
 
 	//main operation
 	BTSlaveToggleMode ();
-	displayString(7, "asdf");
 
 	//send termination report
 	//BTSlaveSendReport ();
@@ -219,8 +220,7 @@ void BTSlaveToggleMode ()
 {
 	int mode = 1;
 	int color = 0;
-	int chamber_requested = 0;
-	int chamber_current = 0;
+	int chamber = 0;
 
 	while (mode != 0)
 	{
@@ -236,10 +236,11 @@ void BTSlaveToggleMode ()
 			displayString(0, "%d", color);
 			if (FilterColor(color))
 			{
-				chamber_current = TurnToColor(StoreColor(color), chamber_current, 1);
-				displayString(1, "%d", StoreColor(color));
-				displayString(1, "%d", chamber_current);
+				chamber = StoreColor (color);
+				TurnToColorSimple (chamber, 1);
 				RotateMotorSimple (MOTOR_SORTER, 90, SPEED_MAX_SORTER);
+				chamber = (6 - chamber) % 6;
+				TurnToColorSimple (chamber, 1);
 			}
 			else
 			{
@@ -254,13 +255,21 @@ void BTSlaveToggleMode ()
 			eraseDisplay();
 			displayString (0, "FIRE");
 			color = PickColor();
-			chamber_current = TurnToColor(SendColor(color), chamber_current, 0);
-			SpoolLaunchMotor (MOTOR_LAUNCHER, true, SPEED_MAX_LAUNCHER);
-			wait1Msec(2000);
-			RotateServo (SERVO_LOWER, SERVO_LOWER_POS1, SERVO_LOWER_POS2, 1000);
-			wait1Msec(2000);
-			SpoolLaunchMotor (MOTOR_LAUNCHER, false, SPEED_MAX_LAUNCHER);
-			wait1Msec(2000);
+			displayString (3, "PICK: %d", color);
+
+			if (color != -1)
+			{
+				chamber = SendColor(color);
+				TurnToColorSimple (chamber, 0);
+				SpoolLaunchMotor (MOTOR_LAUNCHER, true, SPEED_MAX_LAUNCHER);
+				wait1Msec(2000);
+				RotateServo (SERVO_LOWER, SERVO_LOWER_POS1, SERVO_LOWER_POS2, 1000);
+				wait1Msec(2000);
+				SpoolLaunchMotor (MOTOR_LAUNCHER, false, SPEED_MAX_LAUNCHER);
+				chamber = (6 - chamber) % 6;
+				TurnToColorSimple (chamber, 0);
+				wait1Msec(2000);
+			}
 		}
 		if(bQueuedMsgAvailable())
 		{
@@ -296,6 +305,22 @@ int TurnToColor (int chamber_requested, int chamber_current, int side)
 	return chamber_requested;
 }
 
+void TurnToColorSimple (int chamber_requested, int side)
+{
+	int degrees = 0;
+
+	if (side == 1)
+	{
+		chamber_requested = (chamber_requested + 3) % 6;
+	}
+
+	if (chamber_requested != 0)
+	{
+		degrees = -60 * chamber_requested;
+		RotateMotorSimple (MOTOR_STORAGE, degrees, SPEED_MAX_STORAGE);
+	}
+}
+
 int ScanColor()
 {
 	int color1 = 0;
@@ -311,52 +336,52 @@ int ScanColor()
 	{
 			// recives saturation values of Red, Blue, and Green
 			SensorType[S2] = sensorColorNxtRED;
-			wait10Msec(25);
+			wait10Msec (50);
 			red = SensorRaw[S2];
 
 			SensorType[S2] = sensorColorNxtBLUE;
-			wait10Msec(25);
+			wait10Msec (50);
 			blue = SensorRaw[S2];
 
 			SensorType[S2] = sensorColorNxtGREEN;
-			wait10Msec(25);
+			wait10Msec (50);
 			green = SensorRaw[S2];
 
 			color3 = color2;
 			color2 = color1;
 
 			// Checks RGB values to be within tested values
-			if (red <= 290 && red >= 140 &&
-					blue <= 160 && blue >=60 &&
-					green <= 165 && green >= 55)
+			if (red <= 305 && red >= 130 &&
+					blue <= 175 && blue >= 55 &&
+					green <= 170 && green >= 55)
 			{
 				color1 = 1;// Purple
 			}
-			else if (red <= 465 && red >= 400 &&
-							 blue <= 170 && blue >= 50 &&
-							 green <= 215 && green >= 80)
+			else if (red <= 465 && red >= 395 &&
+							 blue <= 190 && blue >= 40 &&
+							 green <= 218 && green >= 75)
 			{
 				color1 = 2;// Orange
 			}
 			else if (red <= 310 && red >= 150 &&
-							 blue <= 160 && blue >= 65 &&
-							 green <= 260 && green >= 175)
+							 blue <= 160 && blue >= 50 &&
+							 green <= 270 && green >= 171)
 			{
 				color1 = 3;// Green
 			}
-			else if (red <= 490 && red >= 406 &&
-							 blue <= 190 && blue >= 65 &&
-						   green <= 320 && green >= 220)
+			else if (red <= 490 && red >= 400 &&
+							 blue <= 190 && blue >= 55 &&
+						   green <= 330 && green >= 210)
 			{
 				color1 = 4;//Yellow
 			}
-			else if (red <= 395  && red >= 320 &&
-							 blue <= 130 &&	blue >= 50 &&
-							 green <= 130 && green >= 50)
+			else if (red <= 394  && red >= 315 &&
+							 blue <= 140 &&	blue >= 40 &&
+							 green <= 140 && green >= 40)
 			{
 				color1 = 5; //Red
 			}
-			else if (red >= 440 && blue >= 340 && green >= 350)
+			else if (red >= 420 && blue >= 320 && green >= 330)
 			{
 				color1 = 0; //White, Empty
 			}
@@ -417,7 +442,7 @@ int PickColor()
 	bool match = false;
 
 	//check for all empty
-	for (int i = 0; i < 6; i ++)
+	for (int i = 0; i < 6; i++)
 	{
 		storage_sum = storage_counts[i];
 	}
